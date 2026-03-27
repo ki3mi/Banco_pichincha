@@ -93,8 +93,7 @@ async function cargarSolicitudes() {
     const { data: sols } = await supabase
         .from('solicitudes_prestamo').select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
+        .order('created_at', { ascending: false });
 
     const el = document.getElementById('listaSolicitudes');
     if (!sols || sols.length === 0) {
@@ -103,22 +102,38 @@ async function cargarSolicitudes() {
     }
 
     const estadoColor = { pendiente: 'warning', aprobado: 'success', rechazado: 'danger' };
-    el.innerHTML = `
-      <ul class="list-group list-group-flush">
-        ${sols.map(s => `
-          <li class="list-group-item d-flex justify-content-between align-items-center px-3">
-            <div>
-              <div class="fw-semibold small">${formatSoles(s.monto)} · ${s.plazo_meses} meses</div>
-              <div class="text-muted" style="font-size:.75rem">
-                ID: ${s.id.slice(0, 8).toUpperCase()} · ${formatFecha(s.created_at)}
-              </div>
-            </div>
-            <span class="badge bg-${estadoColor[s.estado] || 'secondary'} text-capitalize">
-              ${s.estado}
-            </span>
-          </li>
-        `).join('')}
-      </ul>`;
+    const mostrarSolicitudes = (mostrarTodas = false) => {
+        const visibles = mostrarTodas ? sols : sols.slice(0, 5);
+        const botonExtra = sols.length > 5
+            ? `<div class="text-center mt-2"><button id="btnMostrarTodas" class="btn btn-sm btn-outline-primary">Ver todas (${sols.length})</button></div>`
+            : '';
+
+        el.innerHTML = `
+          <ul class="list-group list-group-flush">
+            ${visibles.map(s => `
+              <li class="list-group-item d-flex justify-content-between align-items-center px-3">
+                <div>
+                  <div class="fw-semibold small">${formatSoles(s.monto)} · ${s.plazo_meses} meses</div>
+                  <div class="text-muted" style="font-size:.75rem">
+                    ID: ${s.id.slice(0, 8).toUpperCase()} · ${formatFecha(s.created_at)}
+                  </div>
+                </div>
+                <span class="badge bg-${estadoColor[s.estado] || 'secondary'} text-capitalize">
+                  ${s.estado}
+                </span>
+              </li>
+            `).join('')}
+          </ul>
+          ${!mostrarTodas ? botonExtra : ''}
+        `;
+
+        if (!mostrarTodas && sols.length > 5) {
+            const btn = document.getElementById('btnMostrarTodas');
+            btn?.addEventListener('click', () => mostrarSolicitudes(true));
+        }
+    };
+
+    mostrarSolicitudes(false);
 }
 
 cargarSolicitudes();
